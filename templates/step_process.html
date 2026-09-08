@@ -1,0 +1,72 @@
+{% extends "base.html" %}{% block title %}3 · Process{% endblock %}
+{% set p = draft.process or {} %}
+{% macro f(name, label, unit, ph='', req=false) %}
+<label class="fld"><span>{{ label }} {% if unit %}<i>{{ unit }}</i>{% endif %}</span>
+  <input name="{{ name }}" type="number" step="any" placeholder="{{ ph }}"
+    {{ 'required' if req }} value="{{ p.get(name)|nice }}"></label>
+{% endmacro %}
+{% block body %}
+<h1>3 · Process</h1>
+<p class="lede">Volumes are <b>totals for the whole run</b>, not rates. Everything the engine
+reports is per litre of everything you delivered — batch plus feed plus titrants.</p>
+
+<form method="post">
+<section class="panel req">
+  <h2>Volumes — required</h2>
+  <div class="grid4">
+    {{ f('V_batch','Batch charge','mL','80',true) }}
+    {{ f('V_feed','Total feed','mL','136',true) }}
+    {{ f('V_base','Total base','mL','0') }}
+    {{ f('V_acid','Total acid','mL','0') }}
+  </div>
+</section>
+
+<section class="panel design">
+  <h2>Design targets</h2>
+  <div class="grid4">
+    {{ f('target_CDW','Target cell density','g/L','25') }}
+    {{ f('mu','Growth rate µ at the gas-demand moment','1/h','0.08') }}
+    {{ f('mS','Maintenance mS','g/(g·h)','0.02') }}
+    {{ f('kLa_available','Your vessel kLa','1/h','870') }}
+  </div>
+  <p class="hint">Maintenance barely matters while cells grow fast, but it becomes the
+  dominant oxygen demand at high density or near stationary phase — 0 ignores it.</p>
+</section>
+
+<section class="panel design">
+  <h2>Aeration</h2>
+  <div class="grid4">
+    <label class="fld"><span>Process type</span>
+      <select name="aerobic">
+        <option value="aerobic" {{ 'selected' if p.get('aerobic', True) }}>Aerobic</option>
+        <option value="anaerobic" {{ 'selected' if p.get('aerobic') == False }}>Anaerobic</option>
+      </select></label>
+    {{ f('C_star','O₂ at saturation, C*','mmol/L','0.2156') }}
+    {{ f('DO_setpoint_fraction','DO setpoint','fraction','0.30') }}
+  </div>
+</section>
+
+<section class="panel measured">
+  <h2>What you measured <span class="badge">only if you have run it</span></h2>
+  <div class="grid4">
+    {{ f('CDW_assay','Cell density at harvest','g/L','23.5') }}
+    {{ f('residual_substrate','Leftover carbon source','g/L','0.15') }}
+  </div>
+  <p class="hint">The leftover figure is subtracted from what you delivered to get what was
+  consumed, so an error here moves every yield and the whole carbon balance.</p>
+</section>
+
+<section class="panel opt">
+  <h2>Samples you removed <span class="badge">optional</span></h2>
+  <p class="hint">Every sample takes broth, cells and product out of the vessel. Leave the
+  volume blank and the engine behaves as if you took none.</p>
+  <div class="grid4">
+    {{ f('V_sampled','Total broth removed','mL','22') }}
+    {{ f('CDW_sampled','Average cells in it','g/L','5.1') }}
+    {{ f('residual_sampled','Average leftover sugar in it','g/L','0.15') }}
+    {{ f('titre_sampled','Average product titre in it','g/L','3.0') }}
+  </div>
+</section>
+{% include "_nav.html" %}
+</form>
+{% endblock %}

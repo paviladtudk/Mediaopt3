@@ -1,0 +1,106 @@
+{% extends "base.html" %}{% block title %}5 · Results{% endblock %}
+{% macro n(v, d=2, dash='—') %}{% if v is none %}{{ dash }}{% else %}{{ '%.*f'|format(d, v) }}{% endif %}{% endmacro %}
+{% block body %}
+{% if problem %}
+  <h1>Not enough entered yet</h1>
+  <div class="problem"><b>{{ problem }}</b></div>
+  <p class="lede">Nothing is lost — go back and fill that in, and the rest of your draft is
+  still here.</p>
+  <p><a class="btn primary" href="{{ url_for('step_organism') }}">Back to step 1</a>
+     <a class="btn ghost" href="{{ url_for('step_media') }}">Media</a>
+     <a class="btn ghost" href="{{ url_for('step_process') }}">Process</a>
+     <a class="btn ghost" href="{{ url_for('step_product') }}">Product</a></p>
+{% else %}
+<h1>5 · Results</h1>
+
+{% if r.issues %}
+<section class="panel issues">
+  <h2>Checks on what you entered</h2>
+  {% for i in r.issues %}
+  <div class="issue {{ i.level }}"><b>{{ i.field }}</b> — {{ i.message }}</div>
+  {% endfor %}
+</section>
+{% endif %}
+
+<section class="panel shared">
+  <h2>Shared — what the vessel receives</h2>
+  <div class="tiles">
+    <div class="tile"><b>{{ n(r.shared.carbon_g_per_L, 2) }}</b><span>g C / L delivered</span></div>
+    <div class="tile"><b>{{ n(r.shared.substrate_delivered_g_L, 1) }}</b><span>g substrate / L</span></div>
+    <div class="tile"><b>{{ n(r.shared.carbon_efficiency, 3) }}</b><span>carbon efficiency, derived from Yx/s</span></div>
+  </div>
+</section>
+
+<div class="cols">
+  <section class="panel design">
+    <h2>Design — what the recipe can support</h2>
+    <dl class="kv">
+      <dt>Limiting nutrient</dt><dd>{{ r.design.liebig.limiting or '—' }}</dd>
+      <dt>Cell density it allows</dt><dd>{{ n(r.design.liebig.max_CDW_g_L) }} g/L</dd>
+      <dt>Peak CO₂ (CER)</dt><dd>{{ n(r.design.gas.CER_mmol_L_h, 1) }} mmol/L/h</dd>
+      <dt>Peak O₂ (OUR)</dt><dd>{{ n(r.design.gas.OUR_mmol_L_h, 1) }} mmol/L/h</dd>
+      <dt>Predicted RQ</dt><dd>{{ n(r.design.gas.RQ, 3) }}</dd>
+      <dt>kLa required</dt><dd class="big">{{ n(r.design.kla.kLa_required, 0) }} h⁻¹</dd>
+    </dl>
+    {% if r.design.liebig.not_ranked %}
+    <p class="hint">Not ranked, because no cell content was entered:
+      {{ r.design.liebig.not_ranked|join(', ') }}. These are skipped, not treated as zero.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel measured">
+    <h2>Measured — what the run did</h2>
+    {% if r.measured.carbon.carbon_recovery is none %}
+      <p class="hint">No measured cell density or off-gas entered yet, so there is nothing to
+      balance. Add them on steps 3 and 4.</p>
+    {% else %}
+    <dl class="kv">
+      <dt>Cells, delivered basis</dt><dd>{{ n(r.measured.biomass_delivered_g_L) }} g/L</dd>
+      <dt>Substrate consumed</dt><dd>{{ n(r.measured.carbon.substrate_consumed_g_L, 1) }} g/L</dd>
+      <dt>Carbon recovery</dt><dd class="big">{{ n(r.measured.carbon.carbon_recovery*100, 1) }}%</dd>
+      <dt>O₂ predicted / measured</dt><dd class="big">{{ n(r.measured.electrons.ratio, 3) }}</dd>
+      <dt>Measured RQ</dt><dd>{{ n(r.measured.RQ, 3) }}</dd>
+      <dt>Yx/s achieved</dt><dd>{{ n(r.measured.yields.Yx_S, 3) }} g/g</dd>
+    </dl>
+    {% endif %}
+  </section>
+</div>
+
+<section class="panel checks">
+  <h2>Where the two sides meet — four checks</h2>
+  <table class="checks">
+    <tr><th>Check</th><th>Design</th><th>Measured</th><th>Verdict</th></tr>
+    <tr><td><i>01</i> Respiratory quotient</td>
+        <td>{{ n(r.checks.RQ_design, 3) }}</td><td>{{ n(r.checks.RQ_measured, 3) }}</td>
+        <td class="v">{% if r.checks.RQ_design and r.checks.RQ_measured %}
+          {{ 'close' if (r.checks.RQ_design - r.checks.RQ_measured)|abs < 0.15 else 'they disagree — check the yields' }}
+        {% else %}needs off-gas{% endif %}</td></tr>
+    <tr><td><i>02</i> Oxygen transfer</td>
+        <td>{{ n(r.checks.kLa_required, 0) }} h⁻¹ needed</td>
+        <td>{{ r.checks.kLa_available or '—' }} h⁻¹ available</td>
+        <td class="v {{ 'bad' if 'LIMITED' in r.checks.oxygen_verdict else 'ok' }}">{{ r.checks.oxygen_verdict }}</td></tr>
+    <tr><td><i>03</i> Carbon closure</td><td>—</td>
+        <td>{{ n(r.measured.carbon.carbon_recovery*100, 1) if r.measured.carbon.carbon_recovery else '—' }}%</td>
+        <td class="v {{ 'ok' if r.checks.carbon_verdict.startswith('CLOSED') else 'bad' }}">{{ r.checks.carbon_verdict }}</td></tr>
+    <tr><td><i>04</i> Product by difference</td><td>—</td>
+        <td>{% if r.checks.product_by_difference %}{{ n(r.checks.product_by_difference.implied_titre_g_L) }} g/L implied{% else %}—{% endif %}</td>
+        <td class="v">{{ r.checks.product_by_difference.verdict if r.checks.product_by_difference else 'add a target product' }}</td></tr>
+  </table>
+  <p class="note">The oxygen check uses degrees of reduction and never touches a carbon mass
+  fraction, so it can fail while the carbon balance closes. That combination is informative,
+  not contradictory. Agreement is the only evidence that the recipe you entered and the run
+  you measured describe the same fermentation — disagreement does not say which one is wrong,
+  only that one of them is.</p>
+</section>
+
+<details class="panel">
+  <summary>Show the full calculation</summary>
+  <pre>{{ r|tojson(indent=2) }}</pre>
+</details>
+
+<p class="wizard-nav">
+  <a class="btn ghost" href="{{ url_for('step_product') }}">← Back to inputs</a>
+  <a class="btn ghost" href="{{ url_for('api_report') }}">Download as JSON</a>
+</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}{% block title %}4 · Product{% endblock %}
+{% set g = draft.gas or {} %}
+{% block body %}
+<h1>4 · Product</h1>
+<p class="lede">Leave this whole step empty for a biomass-only design. Cells get first claim
+on the carbon source; the product gets what is left.</p>
+
+<form method="post">
+<section class="panel">
+  <table class="rowtable wide" data-prefix="p">
+    <thead><tr>
+      <th style="width:26%">Product</th>
+      <th>Target g/L</th><th>Yp/s g/g</th>
+      <th>Productivity g/L/h</th><th>Measured g/L</th>
+      <th class="mid">Target?</th><th class="mid">Inside cells?</th>
+    </tr></thead>
+    <tbody>
+    {% for r in (draft.products or []) + [{}, {}] %}
+    <tr>
+      <td><select name="p_compound"><option value="">—</option>
+        {% for c in compounds %}<option value="{{ c }}" {{ 'selected' if r.compound == c }}>{{ c }}</option>{% endfor %}
+      </select></td>
+      <td><input name="p_target" type="number" step="any" value="{{ r.target_g_L|nice }}"></td>
+      <td><input name="p_Yps" type="number" step="any" value="{{ r.Yps|nice }}"></td>
+      <td><input name="p_productivity" type="number" step="any" value="{{ r.productivity_g_L_h|nice }}"></td>
+      <td><input name="p_measured" type="number" step="any" value="{{ r.measured_g_L|nice }}"></td>
+      <td class="mid"><input type="checkbox" name="p_is_target" value="{{ loop.index0 }}" {{ 'checked' if r.is_target }}></td>
+      <td class="mid"><input type="checkbox" name="p_intracellular" value="{{ loop.index0 }}" {{ 'checked' if r.intracellular }}></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <button type="button" class="btn tiny addrow" data-prefix="p">+ add a row</button>
+  <p class="hint"><b>Productivity</b> is an instantaneous rate and is what drives gas demand —
+  a final titre is an accumulated amount and cannot be turned into a rate by multiplying by µ.
+  <b>Inside cells?</b> means the product is already in your dry-weight assay, so its carbon
+  is not counted twice.</p>
+</section>
+
+<section class="panel measured">
+  <h2>Off-gas <span class="badge">only if you have run it</span></h2>
+  <div class="grid3">
+    <label class="fld"><span>CO₂ evolved <i>mmol / L</i></span>
+      <input name="co2_mmol_L" type="number" step="any" value="{{ g.co2_mmol_L|nice }}" placeholder="1250"></label>
+    <label class="fld"><span>O₂ consumed <i>mmol / L</i></span>
+      <input name="o2_mmol_L" type="number" step="any" value="{{ g.o2_mmol_L|nice }}" placeholder="1500"></label>
+  </div>
+  <p class="hint">Per litre of delivered broth. If your system reports integrated CER or OUR,
+  those are integrals of <em>volumetric rates</em> and are not amounts in a fed-batch — convert
+  to a total in moles first, then divide by the delivered volume.</p>
+</section>
+{% set next_label = 'See the results →' %}
+{% include "_nav.html" %}
+</form>
+{% endblock %}

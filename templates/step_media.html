@@ -1,0 +1,66 @@
+{% extends "base.html" %}{% block title %}2 · Media{% endblock %}
+{% macro rows(prefix, data, compounds, label) %}
+<table class="rowtable" data-prefix="{{ prefix }}">
+  <thead><tr><th style="width:52%">Compound</th><th style="width:22%">g / L of this medium</th>
+    <th style="width:26%">Can the organism eat its carbon?</th></tr></thead>
+  <tbody>
+  {% for r in (data or []) + [{}, {}] %}
+  <tr>
+    <td><select name="{{ prefix }}_compound">
+      <option value="">—</option>
+      {% for c in compounds %}<option value="{{ c }}" {{ 'selected' if r.compound == c }}>{{ c }}</option>{% endfor %}
+    </select></td>
+    <td><input name="{{ prefix }}_g_per_L" type="number" step="any" value="{{ r.g_per_L|nice }}"></td>
+    <td class="mid"><input type="checkbox" name="{{ prefix }}_is_substrate" value="{{ loop.index0 }}"
+        {{ 'checked' if r.is_substrate or r.compound is not defined }}></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<button type="button" class="btn tiny addrow" data-prefix="{{ prefix }}">+ add a row</button>
+{% endmacro %}
+{% block body %}
+<h1>2 · Media</h1>
+<p class="lede">Pick each salt and sugar from the list and give its concentration in the
+medium as you make it up — the engine converts to the delivered basis using your volumes.
+Leave rows blank; they simply count as nothing.</p>
+
+<form method="post">
+<section class="panel">
+  <h2>Batch medium <span class="sub">what is in the vessel at the start</span></h2>
+  {{ rows('batch', draft.batch, compounds, 'batch') }}
+</section>
+
+<section class="panel">
+  <h2>Feed medium <span class="sub">the concentrated solution you pump in</span></h2>
+  {{ rows('feed', draft.feed, compounds, 'feed') }}
+</section>
+
+<section class="panel req">
+  <h2>Carbon source to report yields against — required</h2>
+  <label class="fld wide"><span>Substrate</span>
+    <select name="substrate" required>
+      <option value="">— choose —</option>
+      {% for c in compounds %}<option value="{{ c }}" {{ 'selected' if draft.substrate == c }}>{{ c }}</option>{% endfor %}
+    </select></label>
+  <p class="hint">Its carbon fraction, molecular weight and degree of reduction come from
+  the library and drive every downstream number.</p>
+</section>
+
+<section class="panel opt">
+  <h2>Complex feedstock <span class="badge">optional</span></h2>
+  <p class="hint">Yeast extract, corn steep, hydrolysate — anything with no chemical formula
+  to look up. Enter the metabolizable carbon it contributes <b>per delivered litre</b>, from
+  your TOC analysis.</p>
+  <div class="grid3">
+    <label class="fld"><span>Name</span>
+      <input name="fs_name" value="{{ (draft.feedstock or {}).name or '' }}" placeholder="Yeast extract"></label>
+    <label class="fld"><span>Carbon, g C / L delivered</span>
+      <input name="fs_carbon" type="number" step="any" value="{{ (draft.feedstock or {}).carbon_g_per_L|nice }}"></label>
+    <label class="fld chk"><span>Include it</span>
+      <input type="checkbox" name="fs_include" {{ 'checked' if (draft.feedstock or {}).include }}></label>
+  </div>
+</section>
+{% include "_nav.html" %}
+</form>
+{% endblock %}

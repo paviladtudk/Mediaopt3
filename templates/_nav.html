@@ -1,0 +1,5 @@
+<div class="wizard-nav">
+  {% if nav.prev %}<a class="btn ghost" href="{{ url_for('step_' + nav.prev) if nav.prev != 'results' else url_for('results') }}">← Back</a>
+  {% else %}<span></span>{% endif %}
+  <button class="btn primary" type="submit">{{ next_label|default('Continue →') }}</button>
+</div>

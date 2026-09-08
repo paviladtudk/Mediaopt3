@@ -1,0 +1,64 @@
+{% extends "base.html" %}{% block title %}1 · Organism{% endblock %}
+{% set o = draft.organism or {} %}
+{% block body %}
+<h1>1 · Organism</h1>
+<p class="lede">What your cells are made of. Pick one from the library and the published
+values fill in; or choose <em>my own values</em> and type them.</p>
+
+<form method="post">
+<section class="panel">
+  <div class="grid2">
+    <label class="fld"><span>Organism</span>
+      <select name="organism_name" required>
+        <option value="">— choose —</option>
+        {% for name in organisms %}
+        <option value="{{ name }}" {{ 'selected' if o.name == name }}>{{ name }}</option>
+        {% endfor %}
+      </select></label>
+    <label class="fld"><span>Composition source</span>
+      <select name="source">
+        <option value="library" {{ 'selected' if o.source != 'own' }}>Library values</option>
+        <option value="own" {{ 'selected' if o.source == 'own' }}>My own values</option>
+      </select></label>
+  </div>
+  <p class="hint">With <b>Library values</b>, anything you leave blank below uses the
+  published figure for that organism. Type a number only to override it.</p>
+</section>
+
+<section class="panel">
+  <h2>The cell formula — needed for the oxygen balance</h2>
+  <div class="grid4">
+    <label class="fld"><span>Carbon, % of dry weight</span>
+      <input name="C_pct" type="number" step="any" value="{{ o.C_pct|nice }}" placeholder="e.g. 48.0"></label>
+    <label class="fld"><span>H per C (H/C)</span>
+      <input name="H_C" type="number" step="any" value="{{ o.H_C|nice }}" placeholder="1.77"></label>
+    <label class="fld"><span>O per C (O/C)</span>
+      <input name="O_C" type="number" step="any" value="{{ o.O_C|nice }}" placeholder="0.49"></label>
+    <label class="fld"><span>N per C (N/C)</span>
+      <input name="N_C" type="number" step="any" value="{{ o.N_C|nice }}" placeholder="0.24"></label>
+  </div>
+</section>
+
+<section class="panel req">
+  <h2>Biomass yield — required</h2>
+  <label class="fld wide"><span>Cells per gram of carbon source, Yx/s (g/g)</span>
+    <input name="Yxs" type="number" step="any" required value="{{ o.Yxs|nice }}" placeholder="e.g. 0.40"></label>
+  <p class="hint">The carbon efficiency is <b>derived</b> from this —
+    η<sub>C</sub> = Yx/s · w<sub>C,X</sub> / w<sub>C,S</sub> — rather than guessed. Enter a
+    yield you have measured if you have one.</p>
+</section>
+
+<section class="panel opt">
+  <h2>Mineral content, % of dry weight <span class="badge">optional</span></h2>
+  <p class="hint">Blank means "unknown", not "zero" — an unknown element is left out of the
+  ranking rather than reported as limiting.</p>
+  <div class="grid7">
+    {% for m in minerals %}
+    <label class="fld sm"><span>{{ m }}</span>
+      <input name="min_{{ m }}" type="number" step="any" value="{{ (o.minerals or {}).get(m)|nice }}"></label>
+    {% endfor %}
+  </div>
+</section>
+{% include "_nav.html" %}
+</form>
+{% endblock %}

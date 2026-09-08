@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% block title %}MediaOpt{% endblock %}
+{% block body %}
+<h1>Design a fed-batch medium, then check whether your run adds up</h1>
+<p class="lede">Five steps. You enter the organism, the recipe, the vessel and what you want
+to make; the engine works out which nutrient runs out first, how much oxygen the vessel
+has to supply, and — once you have run it — whether your measurements balance.</p>
+
+<div class="pathcards">
+  <div class="card shared"><h3>Shared</h3><p>What the recipe delivers, per litre of
+    everything you deliver. The one quantity both halves of the model use.</p></div>
+  <div class="card design"><h3>Design</h3><p>What your recipe <em>could</em> support:
+    limiting nutrient, expected titres, the kLa the vessel must deliver.</p></div>
+  <div class="card measured"><h3>Measured</h3><p>What your run <em>actually did</em>:
+    carbon recovery, an independent oxygen check, achieved yields.</p></div>
+</div>
+
+<p class="note">Steps 1 to 3 are enough for a design answer. Step 4 is where you add a
+product, and the measured-run fields, if you have already run the fermentation — leave
+them blank and you simply get the design side.</p>
+
+<p><a class="btn primary big" href="{{ url_for('start') }}">Start a new medium →</a>
+{% if draft.organism %}<a class="btn ghost big" href="{{ url_for('step_organism') }}">Continue draft</a>{% endif %}</p>
+{% endblock %}
